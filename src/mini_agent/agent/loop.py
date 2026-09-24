@@ -1,11 +1,11 @@
-from mini_agent.llm.fake_provider import FakeLLMProvider
+from mini_agent.llm.deepseek_provider import DeepSeekProvider
 from mini_agent.tools.registry import create_default_registry
 
 
 class AgentLoop:
     def __init__(self, max_steps: int = 10) -> None:
         self.max_steps = max_steps
-        self.llm = FakeLLMProvider()
+        self.llm = DeepSeekProvider()
         self.tools = create_default_registry()
 
     def run(self, goal: str) -> str:
