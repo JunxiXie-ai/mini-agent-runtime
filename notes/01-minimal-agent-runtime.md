@@ -1,20 +1,19 @@
-```
 # Mini Agent Runtime — Part 1: Minimal Agent Loop
 
 ## 1. Project Goal
 
-Build a local AI Agent Runtime from scratch to understand the core ideas behind:
+Build a local AI Agent Runtime from scratch to understand the core mechanics behind modern coding agents:
 
 - Agent Loop
 - LLM Provider
 - Tool Calling
 - Tool Registry
 - Context / Observation
-- Future Permission, Session, and Memory systems
+- Future Session, Permission, and Memory systems
 
-The goal is not just to build a chatbot, but to understand how an Agent decides actions, executes tools, observes results, and continues reasoning.
+The goal is not just to build a chatbot, but to understand how an Agent **decides, acts, observes, and continues**.
 
-## 2. Current Architecture
+## 2. Architecture
 
 ```text
 User
@@ -36,43 +35,33 @@ Tool Registry
 Tools
 ```
 
+### Module Responsibilities
 
+- `cli.py` — receives the user goal and sends requests to Core.
+- `protocol.py` — defines the JSON request/response format.
+- `core/server.py` — runs the Core daemon and handles requests.
+- `agent/runner.py` — entry point for one Agent run.
+- `agent/loop.py` — controls the Agent decision loop.
+- `llm/fake_provider.py` — simulates LLM decisions for testing.
+- `tools/registry.py` — registers and executes tools.
+- `read_file.py` / `write_file.py` — perform real filesystem actions.
 
-## 3. Module Responsibilities
+## 3. Core Concepts
 
-- `cli.py`
-   Receives the user goal and sends requests to the Core.
-- `protocol.py`
-   Defines the JSON message format between CLI and Core.
-- `core/server.py`
-   Runs the Core daemon and handles incoming requests.
-- `agent/runner.py`
-   Entry point for one Agent run.
-- `agent/loop.py`
-   Controls the main Agent decision loop.
-- `llm/fake_provider.py`
-   Simulates LLM decisions before connecting a real model.
-- `tools/registry.py`
-   Registers and executes available tools.
-- `tools/write_file.py` / `read_file.py`
-   Perform actual filesystem operations.
+### LLM ≠ Agent
 
-## 4. Core Concepts
-
-### LLM is not the Agent
-
-The LLM only decides what should happen next.
+The LLM is mainly the **decision maker**.
 
 The Agent Runtime is responsible for:
 
 - controlling the loop
 - executing tools
-- managing context
-- handling state and permissions
+- maintaining context
+- managing state and future permissions
 
 ### Agent Loop
 
-```
+```text
 Goal
 → LLM Decision
 → Tool Call
@@ -83,13 +72,19 @@ Goal
 → Final Answer
 ```
 
+A simple way to remember it:
+
+```text
+Think → Act → Observe → Repeat
+```
+
 ### Tool Calling
 
 The LLM does not directly modify files.
 
-Instead, it returns structured data such as:
+Instead, it returns a structured request:
 
-```
+```python
 {
     "tool_name": "write_file",
     "arguments": {
@@ -99,32 +94,32 @@ Instead, it returns structured data such as:
 }
 ```
 
-The Runtime then executes the actual Python tool.
+The Runtime then executes the actual Python function.
 
 ### Tool Registry
 
-Instead of putting tool-specific logic inside `AgentLoop`, tools are registered in one place.
+Instead of writing tool-specific logic inside `AgentLoop`, tools are managed in one place:
 
-```
+```python
 self.tools.execute(
     name=tool_name,
     arguments=arguments,
 )
 ```
 
-This makes it easier to add more tools later.
+This keeps the Agent loop simple and makes new tools easier to add.
 
 ### Observation
 
 After a tool runs, its result is added back into the Agent context.
 
-This allows the next LLM decision to depend on what actually happened.
+This lets the next LLM decision depend on what actually happened.
 
-## 5. Current Progress
+## 4. Minimal Agent Loop Completed
 
-The following loop is working:
+The first working loop was:
 
-```
+```text
 Goal
 → Fake LLM
 → write_file
@@ -134,15 +129,25 @@ Goal
 → Final Answer
 ```
 
-The current `FakeLLMProvider` uses fixed logic, so it does not actually understand the user goal yet.
+`FakeLLMProvider` used fixed logic, so it did not understand the user's goal.
 
-Its purpose is to verify that the Agent Runtime architecture works correctly before introducing a real LLM.
+Its purpose was to verify that the Agent Runtime itself worked before connecting a real model.
 
-## 6. Next Steps
+## 5. Mental Model
+
+```text
+CLI       = interface
+Core      = execution service
+AgentLoop = control logic
+LLM       = decision maker
+Tool      = action
+```
+
+## 6. Next Stage
 
 - Define Tool Schemas
-- Add DeepSeek Provider
+- Connect DeepSeek
 - Implement real Tool Calling
+- Add structured Tool Call history
 - Add workspace sandboxing
-- Add permission control
-- Add session and context management
+- Add permission, session, and context management
