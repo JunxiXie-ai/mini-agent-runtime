@@ -1,6 +1,7 @@
 from mini_agent.llm.deepseek_provider import DeepSeekProvider
 from mini_agent.tools.registry import create_default_registry
 
+import json
 
 class AgentLoop:
     def __init__(self, max_steps: int = 10) -> None:
@@ -19,7 +20,10 @@ class AgentLoop:
         for step in range(1, self.max_steps + 1):
             print(f"[Agent] Step {step}")
 
-            response = self.llm.chat(messages)
+            response = self.llm.chat(
+                messages, 
+                self.tools.get_openai_schemas()
+                )
 
             if response["type"] == "final":
                 return response["content"]
@@ -37,17 +41,30 @@ class AgentLoop:
 
                 print(f"[Tool] Result: {tool_result}")
 
+                tool_call_id = response["tool_call_id"]
+
                 messages.append(
                     {
                         "role": "assistant",
-                        "content": f"tool_call: {tool_name}",
+                        "content": None,
+                        "tool_calls": [
+                            {
+                                "id": tool_call_id,
+                                "type": "function",
+                                "function": {
+                                    "name": tool_name,
+                                    "arguments": json.dumps(arguments),
+                                },
+                            }
+                        ],
                     }
                 )
 
                 messages.append(
                     {
-                        "role": "user",
-                        "content": f"tool_result: {tool_result}",
+                        "role": "tool",
+                        "tool_call_id": tool_call_id,
+                        "content": tool_result,
                     }
                 )
 

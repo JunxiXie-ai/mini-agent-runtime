@@ -33,6 +33,9 @@ class ToolRegistry:
     def get_schemas(self) -> list[Tool]:
         return list(self.schemas.values())
 
+    def get_openai_schemas(self) -> list[dict[str, Any]]:
+        return [schema.to_openai_schema() for schema in self.schemas.values()]
+
 
 def create_default_registry() -> ToolRegistry:
     registry = ToolRegistry()
