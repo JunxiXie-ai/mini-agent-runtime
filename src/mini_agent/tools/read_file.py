@@ -1,4 +1,5 @@
 from mini_agent.tools.base import Tool
+from mini_agent.tools.workspace import resolve_workspace_path
 
 
 READ_FILE_TOOL = Tool(
@@ -18,5 +19,12 @@ READ_FILE_TOOL = Tool(
 
 
 def read_file(path: str) -> str:
-    with open(path, "r", encoding="utf-8") as file:
-        return file.read()
+    target = resolve_workspace_path(path)
+
+    if not target.exists():
+        return f"File not found: {path}"
+
+    if not target.is_file():
+        return f"Not a file: {path}"
+
+    return target.read_text(encoding="utf-8")
