@@ -28,7 +28,10 @@ class ToolRegistry:
 
         tool = self.tools[name]
 
-        return tool(**arguments)
+        try:
+            return tool(**arguments)
+        except Exception as exc:
+            return f"Tool error: {exc}"
 
     def get_schemas(self) -> list[Tool]:
         return list(self.schemas.values())
