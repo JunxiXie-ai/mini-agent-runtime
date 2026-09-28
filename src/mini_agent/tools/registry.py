@@ -4,7 +4,7 @@ from typing import Any
 from mini_agent.tools.base import Tool
 from mini_agent.tools.read_file import READ_FILE_TOOL, read_file
 from mini_agent.tools.write_file import WRITE_FILE_TOOL, write_file
-
+from mini_agent.tools.list_dir import LIST_DIR_TOOL, list_dir
 
 ToolFunction = Callable[..., str]
 
@@ -45,5 +45,6 @@ def create_default_registry() -> ToolRegistry:
 
     registry.register(WRITE_FILE_TOOL, write_file)
     registry.register(READ_FILE_TOOL, read_file)
+    registry.register(LIST_DIR_TOOL, list_dir)
 
     return registry
