@@ -1,4 +1,4 @@
-from mini_agent.llm.deepseek_provider import DeepSeekProvider
+from mini_agent.llm.deepseek_provider import DeepSeekProvider, SYSTEM_PROMPT
 from mini_agent.tools.registry import create_default_registry
 
 import json
@@ -11,6 +11,10 @@ class AgentLoop:
 
     def run(self, goal: str) -> str:
         messages = [
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT,
+            },
             {
                 "role": "user",
                 "content": goal,
