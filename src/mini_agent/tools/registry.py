@@ -5,6 +5,7 @@ from mini_agent.tools.base import Tool
 from mini_agent.tools.read_file import READ_FILE_TOOL, read_file
 from mini_agent.tools.write_file import WRITE_FILE_TOOL, write_file
 from mini_agent.tools.list_dir import LIST_DIR_TOOL, list_dir
+from mini_agent.tools.run_python import RUN_PYTHON_TOOL, run_python
 
 ToolFunction = Callable[..., str]
 
@@ -46,5 +47,6 @@ def create_default_registry() -> ToolRegistry:
     registry.register(WRITE_FILE_TOOL, write_file)
     registry.register(READ_FILE_TOOL, read_file)
     registry.register(LIST_DIR_TOOL, list_dir)
+    registry.register(RUN_PYTHON_TOOL, run_python)
 
     return registry
