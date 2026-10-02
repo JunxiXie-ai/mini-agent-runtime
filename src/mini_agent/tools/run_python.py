@@ -2,6 +2,7 @@ import subprocess
 
 from mini_agent.tools.base import Tool
 from mini_agent.tools.workspace import WORKSPACE_ROOT, resolve_workspace_path
+from mini_agent.tools.result import ToolResult
 
 
 RUN_PYTHON_TOOL = Tool(
@@ -20,17 +21,17 @@ RUN_PYTHON_TOOL = Tool(
 )
 
 
-def run_python(path: str) -> str:
+def run_python(path: str) -> ToolResult:
     target = resolve_workspace_path(path)
 
     if not target.exists():
-        return f"File not found: {path}"
+        return ToolResult(success=False, output=f"File not found: {path}")
 
     if not target.is_file():
         return f"Not a file: {path}"
 
     if target.suffix != ".py":
-        return f"Not a Python file: {path}"
+        return ToolResult(success=False, output=f"Not a Python file: {path}")
 
     result = subprocess.run(
         ["python", str(target)],
@@ -45,4 +46,4 @@ def run_python(path: str) -> str:
     if result.stderr:
         output += result.stderr
 
-    return output or f"Process exited with code {result.returncode}"
+    return ToolResult(success=result.returncode == 0, output=output or f"Process exited with code {result.returncode}")

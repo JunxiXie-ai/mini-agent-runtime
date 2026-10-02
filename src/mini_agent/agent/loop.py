@@ -10,6 +10,7 @@ class AgentLoop:
         self.tools = create_default_registry()
 
     def run(self, goal: str) -> str:
+        tool_history = []
         messages = [
             {
                 "role": "system",
@@ -30,6 +31,7 @@ class AgentLoop:
                 )
 
             if response["type"] == "final":
+                print("[Agent] Tool history:", tool_history)
                 return response["content"]
 
             if response["type"] == "tool_call":
@@ -42,8 +44,14 @@ class AgentLoop:
                     name=tool_name,
                     arguments=arguments,
                 )
+                tool_history.append({
+                    "tool_name": tool_name,
+                    "arguments": arguments,
+                    "result": tool_result.output,
+                    "success": tool_result.success,
+                })
 
-                print(f"[Tool] Result: {tool_result}")
+                print(f"[Tool] Result: {tool_result.output}")
 
                 tool_call_id = response["tool_call_id"]
 
@@ -68,7 +76,7 @@ class AgentLoop:
                     {
                         "role": "tool",
                         "tool_call_id": tool_call_id,
-                        "content": tool_result,
+                        "content": tool_result.output,
                     }
                 )
 

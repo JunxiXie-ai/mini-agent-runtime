@@ -6,8 +6,9 @@ from mini_agent.tools.read_file import READ_FILE_TOOL, read_file
 from mini_agent.tools.write_file import WRITE_FILE_TOOL, write_file
 from mini_agent.tools.list_dir import LIST_DIR_TOOL, list_dir
 from mini_agent.tools.run_python import RUN_PYTHON_TOOL, run_python
+from mini_agent.tools.result import ToolResult
 
-ToolFunction = Callable[..., str]
+ToolFunction = Callable[..., ToolResult]
 
 
 class ToolRegistry:
@@ -23,16 +24,16 @@ class ToolRegistry:
         self.tools[schema.name] = tool
         self.schemas[schema.name] = schema
 
-    def execute(self, name: str, arguments: dict[str, Any]) -> str:
+    def execute(self, name: str, arguments: dict[str, Any]) -> ToolResult:
         if name not in self.tools:
-            return f"Unknown tool: {name}"
+            return ToolResult(success=False, output=f"Unknown tool: {name}")
 
         tool = self.tools[name]
 
         try:
             return tool(**arguments)
         except Exception as exc:
-            return f"Tool error: {exc}"
+            return ToolResult(success=False, output=f"Tool error: {exc}")
 
     def get_schemas(self) -> list[Tool]:
         return list(self.schemas.values())

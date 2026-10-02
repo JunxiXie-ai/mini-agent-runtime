@@ -1,5 +1,6 @@
 from mini_agent.tools.base import Tool
 from mini_agent.tools.workspace import resolve_workspace_path
+from mini_agent.tools.result import ToolResult
 
 
 WRITE_FILE_TOOL = Tool(
@@ -22,7 +23,7 @@ WRITE_FILE_TOOL = Tool(
 )
 
 
-def write_file(path: str, content: str) -> str:
+def write_file(path: str, content: str) -> ToolResult:
     target = resolve_workspace_path(path)
 
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -32,4 +33,4 @@ def write_file(path: str, content: str) -> str:
         encoding="utf-8",
     )
 
-    return f"File written successfully: {path}"
+    return ToolResult(success=True, output=f"File written successfully: {path}")
