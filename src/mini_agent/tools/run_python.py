@@ -28,7 +28,7 @@ def run_python(path: str) -> ToolResult:
         return ToolResult(success=False, output=f"File not found: {path}")
 
     if not target.is_file():
-        return f"Not a file: {path}"
+        return ToolResult(success=False, output=f"Not a file: {path}")
 
     if target.suffix != ".py":
         return ToolResult(success=False, output=f"Not a Python file: {path}")

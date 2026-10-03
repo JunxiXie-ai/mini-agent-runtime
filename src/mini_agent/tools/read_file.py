@@ -28,4 +28,4 @@ def read_file(path: str) -> ToolResult:
     if not target.is_file():
         return ToolResult(success=False, output=f"Not a file: {path}")
 
-    return target.read_text(encoding="utf-8")
+    return ToolResult(success=True, output=target.read_text(encoding="utf-8"))

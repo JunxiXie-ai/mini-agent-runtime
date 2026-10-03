@@ -1,16 +1,20 @@
 from mini_agent.llm.deepseek_provider import DeepSeekProvider, SYSTEM_PROMPT
 from mini_agent.tools.registry import create_default_registry
+from mini_agent.agent.events.bus import EventBus
+from mini_agent.agent.events.types import Event
 
 import json
 
 class AgentLoop:
-    def __init__(self, max_steps: int = 10) -> None:
+    def __init__(self, event_bus: EventBus, max_steps: int = 10) -> None:
         self.max_steps = max_steps
         self.llm = DeepSeekProvider()
         self.tools = create_default_registry()
+        self.event_bus = event_bus
 
     def run(self, goal: str) -> str:
         tool_history = []
+
         messages = [
             {
                 "role": "system",
@@ -19,39 +23,103 @@ class AgentLoop:
             {
                 "role": "user",
                 "content": goal,
-            }
+            },
         ]
 
+        self.event_bus.publish(
+            Event(
+                type="run_started",
+                data={
+                    "goal": goal,
+                },
+            )
+        )
+
         for step in range(1, self.max_steps + 1):
-            print(f"[Agent] Step {step}")
+            self.event_bus.publish(
+                Event(
+                    type="step_started",
+                    data={
+                        "step": step,
+                    },
+                )
+            )
 
             response = self.llm.chat(
-                messages, 
-                self.tools.get_openai_schemas()
-                )
+                messages,
+                self.tools.get_openai_schemas(),
+            )
 
             if response["type"] == "final":
-                print("[Agent] Tool history:", tool_history)
+                self.event_bus.publish(
+                    Event(
+                        type="step_finished",
+                        data={
+                            "step": step,
+                        },
+                    )
+                )
+
+                self.event_bus.publish(
+                    Event(
+                        type="run_finished",
+                        data={
+                            "status": "success",
+                            "steps": step,
+                        },
+                    )
+                )
+
                 return response["content"]
 
             if response["type"] == "tool_call":
                 tool_name = response["tool_name"]
                 arguments = response["arguments"]
 
-                print(f"[Agent] Tool call: {tool_name}")
+                self.event_bus.publish(
+                    Event(
+                        type="tool_call_started",
+                        data={
+                            "tool_name": tool_name,
+                            "arguments": arguments,
+                        },
+                    )
+                )
 
                 tool_result = self.tools.execute(
                     name=tool_name,
                     arguments=arguments,
                 )
-                tool_history.append({
-                    "tool_name": tool_name,
-                    "arguments": arguments,
-                    "result": tool_result.output,
-                    "success": tool_result.success,
-                })
 
-                print(f"[Tool] Result: {tool_result.output}")
+                tool_history.append(
+                    {
+                        "tool_name": tool_name,
+                        "arguments": arguments,
+                        "result": tool_result.output,
+                        "success": tool_result.success,
+                    }
+                )
+
+                if tool_result.success:
+                    self.event_bus.publish(
+                        Event(
+                            type="tool_call_finished",
+                            data={
+                                "tool_name": tool_name,
+                                "output": tool_result.output,
+                            },
+                        )
+                    )
+                else:
+                    self.event_bus.publish(
+                        Event(
+                            type="tool_call_failed",
+                            data={
+                                "tool_name": tool_name,
+                                "error": tool_result.output,
+                            },
+                        )
+                    )
 
                 tool_call_id = response["tool_call_id"]
 
@@ -79,5 +147,25 @@ class AgentLoop:
                         "content": tool_result.output,
                     }
                 )
+
+            self.event_bus.publish(
+                Event(
+                    type="step_finished",
+                    data={
+                        "step": step,
+                    },
+                )
+            )
+
+        self.event_bus.publish(
+            Event(
+                type="run_finished",
+                data={
+                    "status": "failed",
+                    "reason": "max_steps",
+                    "steps": self.max_steps,
+                },
+            )
+        )
 
         return "Agent stopped because the maximum number of steps was reached."
