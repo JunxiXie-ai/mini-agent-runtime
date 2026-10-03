@@ -13,7 +13,6 @@ class AgentLoop:
         self.event_bus = event_bus
 
     def run(self, goal: str) -> str:
-        tool_history = []
 
         messages = [
             {
@@ -45,10 +44,27 @@ class AgentLoop:
                 )
             )
 
-            response = self.llm.chat(
-                messages,
-                self.tools.get_openai_schemas(),
-            )
+            try:
+                response = self.llm.chat(
+                    messages,
+                    self.tools.get_openai_schemas(),
+                )
+            except Exception as exc:
+                self.event_bus.publish(
+                    Event(type="step_finished", data={"step": step})
+                )
+                self.event_bus.publish(
+                    Event(
+                        type="run_finished",
+                        data={
+                            "status": "failed",
+                            "reason": "llm_error",
+                            "steps": step,
+                            "error": str(exc),
+                        },
+                    )
+                )
+                return f"Agent stopped because the LLM failed: {exc}"
 
             if response["type"] == "final":
                 self.event_bus.publish(
@@ -89,15 +105,6 @@ class AgentLoop:
                 tool_result = self.tools.execute(
                     name=tool_name,
                     arguments=arguments,
-                )
-
-                tool_history.append(
-                    {
-                        "tool_name": tool_name,
-                        "arguments": arguments,
-                        "result": tool_result.output,
-                        "success": tool_result.success,
-                    }
                 )
 
                 if tool_result.success:
