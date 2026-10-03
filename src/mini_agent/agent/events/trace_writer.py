@@ -13,6 +13,7 @@ class TraceWriter:
     def write(self, event: Event) -> None:
         record = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "run_id": event.run_id,
             "type": event.type,
             "data": event.data,
         }

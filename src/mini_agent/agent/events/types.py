@@ -6,3 +6,4 @@ from typing import Any
 class Event:
     type: str
     data: dict[str, Any]
+    run_id: str | None = None

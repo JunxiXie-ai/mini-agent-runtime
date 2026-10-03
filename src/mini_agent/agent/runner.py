@@ -13,9 +13,10 @@ def print_event(event: Event) -> None:
 
 
 def run_agent(goal: str) -> str:
-    event_bus = EventBus()
+    run_id = uuid4().hex
+    event_bus = EventBus(run_id=run_id)
 
-    trace_path = Path("traces") / f"{uuid4().hex}.jsonl"
+    trace_path = Path("traces") / f"{run_id}.jsonl"
     trace_writer = TraceWriter(trace_path)
     state = RunState()
 
