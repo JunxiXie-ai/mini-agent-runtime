@@ -220,3 +220,4 @@ __marimo__/
 # Project-specific ignores
 .DS_Store
 workspace/
+traces/
