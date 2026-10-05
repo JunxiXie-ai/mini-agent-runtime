@@ -2,6 +2,7 @@ from mini_agent.llm.deepseek_provider import DeepSeekProvider, SYSTEM_PROMPT
 from mini_agent.tools.registry import create_default_registry
 from mini_agent.agent.events.bus import EventBus
 from mini_agent.agent.events.types import Event
+from mini_agent.agent.session import Session
 
 import json
 
@@ -12,18 +13,22 @@ class AgentLoop:
         self.tools = create_default_registry()
         self.event_bus = event_bus
 
-    def run(self, goal: str) -> str:
+    def run(self, goal: str, session: Session | None = None) -> str:
+        if session is None:
+            session = Session()
 
-        messages = [
-            {
+        messages = session.messages
+
+        if not messages:
+            messages.append({
                 "role": "system",
                 "content": SYSTEM_PROMPT,
-            },
-            {
-                "role": "user",
-                "content": goal,
-            },
-        ]
+            })
+
+        messages.append({
+            "role": "user",
+            "content": goal,
+        })
 
         self.event_bus.publish(
             Event(
@@ -67,6 +72,13 @@ class AgentLoop:
                 return f"Agent stopped because the LLM failed: {exc}"
 
             if response["type"] == "final":
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": response["content"],
+                    }
+                )
+
                 self.event_bus.publish(
                     Event(
                         type="step_finished",
